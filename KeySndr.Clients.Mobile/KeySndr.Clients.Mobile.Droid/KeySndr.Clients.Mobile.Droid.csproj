@@ -179,5 +179,8 @@
   <ItemGroup>
     <AndroidResource Include="Resources\drawable-xxxhdpi\ic_loop_white_24dp.png" />
   </ItemGroup>
+  <ItemGroup>
+    <AndroidAsset Include="Assets\index.html" />
+  </ItemGroup>
   <Import Project="$(MSBuildExtensionsPath)\Novell\Novell.MonoDroid.CSharp.targets" />
 </Project>

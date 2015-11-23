@@ -1,8 +1,10 @@
 ﻿using System.Collections.Generic;
 using System.Threading.Tasks;
+using System.Xml.Serialization;
 using Android.App;
 using Android.Content;
 using Android.Content.PM;
+using Android.Database;
 using Android.Views;
 using Android.OS;
 using Android.Webkit;
@@ -17,20 +19,30 @@ namespace KeySndr.Clients.Mobile.Droid
 	[Activity (Label = "KeySndrWeb", MainLauncher = true, Icon = "@mipmap/ic_launcher", LaunchMode = LaunchMode.SingleTop)]
 	public class MainActivity : Activity
 	{
+	    private const string UrlKey = "URL";
+
 	    private WebView webView;
         private IWebConnectionProvider webConnection;
         private AppPreferences preferences;
         private InputConfigurationsSelectDialog configurationsSelectDialog;
         private InputConfiguration inputConfiguration;
+	    private string currentUrl;
 
         protected override void OnCreate (Bundle bundle)
 		{
 			base.OnCreate (bundle);
-			SetContentView (Resource.Layout.Main);
-            webView = FindViewById<WebView>(Resource.Id.webview);
+            SetContentView(Resource.Layout.Main);
+            currentUrl = "file:///android_asset/index.html";
+            
+            if (bundle != null && bundle.ContainsKey(UrlKey))
+                currentUrl = bundle.GetString(UrlKey);
+
             LoadPreferences();
+            AssignWebView();
             SetupWebView();
             CheckFirstRun();
+
+            LoadUrl();
         }
 
 	    protected override void OnResume()
@@ -44,10 +56,28 @@ namespace KeySndr.Clients.Mobile.Droid
             }
         }
 
-	    private void LoadPreferences()
+        protected override void OnSaveInstanceState(Bundle outState)
+        {
+            base.OnSaveInstanceState(outState);
+            outState.PutString(UrlKey, currentUrl);
+        }
+
+        protected override void OnDestroy()
+	    {
+	        if (configurationsSelectDialog != null && configurationsSelectDialog.IsShowing)
+                configurationsSelectDialog.Dismiss();
+            base.OnDestroy();
+        }
+
+        private void LoadPreferences()
         {
             preferences =
                 AndroidAppPreferences.Create(Application.Context.GetSharedPreferences(KeySndrApplication.AppPreferencesId, FileCreationMode.Private));
+        }
+
+	    private void AssignWebView()
+	    {
+            webView = FindViewById<WebView>(Resource.Id.webview);
         }
 
         private void SetupWebView()
@@ -59,15 +89,10 @@ namespace KeySndr.Clients.Mobile.Droid
             webView.Settings.SetAppCacheEnabled(false);
         }
 
-	    private void LoadViewUrl()
+	    private void LoadUrl()
 	    {
-            webView.LoadUrl($"http://{preferences.Ip}:{preferences.Port}/{inputConfiguration.View}/index.html");
-        }
-
-        private void LoadGridUrl()
-        {
-            webView.LoadUrl($"http://{preferences.Ip}:{preferences.Port}/manage/play-grid.html?name={inputConfiguration.Name}");
-        }
+	        webView.LoadUrl(currentUrl);
+	    }
 
         private void OpenSettings()
         {
@@ -75,11 +100,13 @@ namespace KeySndr.Clients.Mobile.Droid
             intent.PutExtra("search", true);
             StartActivity(intent);
         }
+
         private void CheckFirstRun()
         {
             if (preferences.FirtsTimeRunning)
                 OpenSettings();
         }
+
         public override bool OnCreateOptionsMenu(IMenu menu)
         {
             MenuInflater.Inflate(Resource.Menu.main_activity_actions, menu);
@@ -128,19 +155,17 @@ namespace KeySndr.Clients.Mobile.Droid
         private void RequestedConfigurationReceived(Task<ApiResult<InputConfiguration>> task)
         {
             var apiResult = task.Result;
-            RunOnUiThread(new Runnable(() =>
-            {
-                inputConfiguration = apiResult.Content;
-                SetupView();
-            }));
+            inputConfiguration = apiResult.Content;
+            currentUrl = inputConfiguration.HasView 
+                ? $"http://{preferences.Ip}:{preferences.Port}/{inputConfiguration.View}/index.html" 
+                : $"http://{preferences.Ip}:{preferences.Port}/manage/play-grid.html?name={inputConfiguration.Name}";
+
+            RunOnUiThread(new Runnable(SetupView));
         }
 
         private void SetupView()
-        {
-            if (inputConfiguration.HasView)
-                LoadViewUrl();
-            else
-                LoadGridUrl();
+        {  
+            LoadUrl(); 
         }
     }
 }
