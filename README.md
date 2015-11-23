@@ -1,9 +1,9 @@
 # KeySndr.Clients
-Xamarin starter edition project for KeySndr clients
+Visual Studio Community 2015 / Xamarin starter edition solution for KeySndr clients
 
 Connect to [KeySndr] server
 
-Uses a slightly modified version of [Beacon] for server discovery
+Android project uses a slightly modified version of [Beacon] for server discovery
 
 <a href="https://play.google.com/store/apps/details?id=com.blockz3d.keysndr_web">
 	<img alt="Get it on Google Play" src="https://developer.android.com/images/brand/en_generic_rgb_wo_60.png" />
