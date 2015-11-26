@@ -157,7 +157,7 @@ namespace KeySndr.Clients.Mobile.Droid
             var apiResult = task.Result;
             inputConfiguration = apiResult.Content;
             currentUrl = inputConfiguration.HasView 
-                ? $"http://{preferences.Ip}:{preferences.Port}/{inputConfiguration.View}/index.html" 
+                ? $"http://{preferences.Ip}:{preferences.Port}/Views/{inputConfiguration.View}/index.html" 
                 : $"http://{preferences.Ip}:{preferences.Port}/manage/play-grid.html?name={inputConfiguration.Name}";
 
             RunOnUiThread(new Runnable(SetupView));
