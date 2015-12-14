@@ -19,7 +19,8 @@ namespace KeySndr.Clients.Mobile.Droid
                 FirtsTimeRunning = prefs.GetBoolean(AppPreferences.FirstTimeKey, true),
                 Ip = prefs.GetString(AppPreferences.IpKey, ""),
                 Port = prefs.GetInt(AppPreferences.PortKey, 0),
-                UseSounds = prefs.GetBoolean(AppPreferences.UseSoundsKey, true)
+                UseSounds = prefs.GetBoolean(AppPreferences.UseSoundsKey, true),
+                UseCache = prefs.GetBoolean(AppPreferences.UseCacheKey, true)
             };
         }
 
@@ -30,6 +31,7 @@ namespace KeySndr.Clients.Mobile.Droid
             editor.PutString(AppPreferences.IpKey, Ip);
             editor.PutInt(AppPreferences.PortKey, Port);
             editor.PutBoolean(AppPreferences.UseSoundsKey, UseSounds);
+            editor.PutBoolean(AppPreferences.UseCacheKey, UseCache);
             editor.Commit();
         }
     }

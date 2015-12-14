@@ -26,8 +26,8 @@
         android:layout_height="wrap_content"
         android:id="@+id/portEditText" />
     <CheckBox
-        android:text="Use Click sounds"
+        android:text="Use Cache"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:id="@+id/enableSoundCheckBox" />
+        android:id="@+id/enableCache" />
 </LinearLayout>

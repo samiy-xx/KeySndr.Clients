@@ -1,13 +1,13 @@
 ﻿using System.Collections.Generic;
 using System.Threading.Tasks;
-using System.Xml.Serialization;
 using Android.App;
 using Android.Content;
 using Android.Content.PM;
-using Android.Database;
+using Android.Graphics;
 using Android.Views;
 using Android.OS;
 using Android.Webkit;
+using Android.Widget;
 using Java.Lang;
 using KeySndr.Clients.Mobile.Droid.dialogs;
 using KeySndr.Clients.Mobile.Droid.events;
@@ -16,7 +16,7 @@ using KeySndr.Common.Providers;
 
 namespace KeySndr.Clients.Mobile.Droid
 {
-	[Activity (Label = "KeySndrWeb", MainLauncher = true, Icon = "@mipmap/ic_launcher", LaunchMode = LaunchMode.SingleTop)]
+	[Activity (Label = "KeySndr", MainLauncher = true, Icon = "@mipmap/ic_launcher", LaunchMode = LaunchMode.SingleTop)]
 	public class MainActivity : Activity
 	{
 	    private const string UrlKey = "URL";
@@ -85,9 +85,14 @@ namespace KeySndr.Clients.Mobile.Droid
             webView.Settings.JavaScriptEnabled = true;
             webView.Settings.UseWideViewPort = true;
             webView.Settings.LoadWithOverviewMode = true;
-            webView.Settings.CacheMode = CacheModes.NoCache;
-            webView.Settings.SetAppCacheEnabled(false);
-        }
+            webView.Settings.DomStorageEnabled = true;
+            if (!preferences.UseCache)
+            {
+                webView.Settings.CacheMode = CacheModes.NoCache;
+                webView.Settings.SetAppCacheEnabled(false);
+            }
+            webView.SetWebViewClient(new WebClient(this));
+	    }
 
 	    private void LoadUrl()
 	    {
@@ -166,6 +171,34 @@ namespace KeySndr.Clients.Mobile.Droid
         private void SetupView()
         {  
             LoadUrl(); 
+        }
+
+        internal class WebClient : WebViewClient
+        {
+            private readonly Context context;
+
+            public WebClient(Context c)
+            {
+                context = c;
+            }
+
+            public override bool ShouldOverrideUrlLoading(WebView view, string url)
+            {
+                view.LoadUrl(url);
+                Toast.MakeText(context, "Loading", ToastLength.Short).Show();
+                return true;
+            }
+
+            public override void OnPageStarted(WebView view, string url, Bitmap favicon)
+            {
+                base.OnPageStarted(view, url, favicon);
+            }
+
+            public override void OnPageFinished(WebView view, string url)
+            {
+                base.OnPageFinished(view, url);
+                Toast.MakeText(context, "Loaded", ToastLength.Short).Show();
+            }
         }
     }
 }

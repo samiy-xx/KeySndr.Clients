@@ -161,7 +161,7 @@ namespace KeySndr.Clients.Mobile.Droid
 			public const int action_settings = 2131296266;
 			
 			// aapt resource value: 0x7f090008
-			public const int enableSoundCheckBox = 2131296264;
+			public const int enableCache = 2131296264;
 			
 			// aapt resource value: 0x7f090005
 			public const int ipEditText = 2131296261;

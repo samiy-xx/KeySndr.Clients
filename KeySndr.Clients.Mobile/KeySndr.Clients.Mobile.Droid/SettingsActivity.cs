@@ -1,12 +1,10 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Timers;
 using Android.App;
 using Android.Content;
 using Android.OS;
-using Android.Runtime;
 using Android.Util;
 using Android.Views;
 using Android.Widget;
@@ -20,7 +18,7 @@ namespace KeySndr.Clients.Mobile.Droid
     {
         private EditText editIpView;
         private EditText editPortView;
-        private CheckBox editSoundView;
+        private CheckBox useCacheView;
         private IMenuItem refreshMenuItem;
 
         private Probe probe;
@@ -39,14 +37,13 @@ namespace KeySndr.Clients.Mobile.Droid
 
             editIpView = FindViewById<EditText>(Resource.Id.ipEditText);
             editPortView = FindViewById<EditText>(Resource.Id.portEditText);
-            editSoundView = FindViewById<CheckBox>(Resource.Id.enableSoundCheckBox);
+            useCacheView = FindViewById<CheckBox>(Resource.Id.enableCache);
 
             if (!string.IsNullOrEmpty(prefs.Ip))
                 editIpView.Text = prefs.Ip;
             if (prefs.Port > 0)
                 editPortView.Text = prefs.Port.ToString();
-            editSoundView.Checked = prefs.UseSounds;
-
+            useCacheView.Checked = prefs.UseCache;
 
             probe = new Probe("KeySndrServer");
             probe.BeaconsUpdated += Probe_BeaconsUpdated;
@@ -125,8 +122,8 @@ namespace KeySndr.Clients.Mobile.Droid
                 AndroidAppPreferences.Create(Application.Context.GetSharedPreferences(KeySndrApplication.AppPreferencesId, FileCreationMode.Private));
             prefs.SetIp(GetString(editIpView, "127.0.0.1"))
                 .SetPort(int.Parse(GetString(editPortView, "6666")))
-                .SetUseSounds(editSoundView.Checked)
                 .SetFirstTimeRunning(false)
+                .SetCache(useCacheView.Checked)
                 .Write();
 
             if (t.Enabled)
