@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using Android.App;
 using Android.Content;
@@ -27,6 +28,7 @@ namespace KeySndr.Clients.Mobile.Droid
         private InputConfigurationsSelectDialog configurationsSelectDialog;
         private InputConfiguration inputConfiguration;
 	    private string currentUrl;
+	    private string serverVersion;
 
         protected override void OnCreate (Bundle bundle)
 		{
@@ -43,7 +45,8 @@ namespace KeySndr.Clients.Mobile.Droid
             CheckFirstRun();
 
             LoadUrl();
-        }
+            
+		}
 
 	    protected override void OnResume()
 	    {
@@ -53,6 +56,7 @@ namespace KeySndr.Clients.Mobile.Droid
             if (!string.IsNullOrEmpty(preferences.Ip))
             {
                 webConnection.SetBaseAddress(preferences.Ip, preferences.Port);
+                LoadServerVersion();
             }
         }
 
@@ -69,7 +73,19 @@ namespace KeySndr.Clients.Mobile.Droid
             base.OnDestroy();
         }
 
-        private void LoadPreferences()
+	    private void LoadServerVersion()
+	    {
+	        webConnection.RequestAssemblyVersion()
+                .ContinueWith(ServerVersionReceived);
+	    }
+
+	    private void ServerVersionReceived(Task<ApiResult<string>> task)
+	    {
+	        var result = task.Result;
+	        serverVersion = result.Content;
+	    }
+
+	    private void LoadPreferences()
         {
             preferences =
                 AndroidAppPreferences.Create(Application.Context.GetSharedPreferences(KeySndrApplication.AppPreferencesId, FileCreationMode.Private));
@@ -136,11 +152,11 @@ namespace KeySndr.Clients.Mobile.Droid
 
         private void SendRequestForConfigurations()
         {
-            webConnection.RequestConfigurations()
+            webConnection.RequestConfigurationItems()
                 .ContinueWith(RequestedConfigurationsReceived);
         }
 
-        private void RequestedConfigurationsReceived(Task<ApiResult<IEnumerable<string>>> task)
+        private void RequestedConfigurationsReceived(Task<ApiResult<IEnumerable<ConfigurationListItem>>> task)
         {
             var apiResult = task.Result;
             RunOnUiThread(() =>

@@ -1,15 +1,12 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-
 using Android.App;
-using Android.Content;
 using Android.OS;
-using Android.Runtime;
 using Android.Views;
 using Android.Widget;
 using KeySndr.Clients.Mobile.Droid.events;
+using KeySndr.Common;
 
 namespace KeySndr.Clients.Mobile.Droid.dialogs
 {
@@ -18,19 +15,21 @@ namespace KeySndr.Clients.Mobile.Droid.dialogs
         private Spinner spinner;
         private Button okButton;
         private Button cancelButton;
-        private readonly IEnumerable<string> configurations;
+        private IEnumerable<ConfigurationListItem> configurations;
         private readonly Activity activity;
         public event EventHandler<OnSelectConfigurationArgs> OnSelectConfiguration;
 
-        public InputConfigurationsSelectDialog(Activity context, IEnumerable<string> c) : base(context)
+        public InputConfigurationsSelectDialog(Activity context, IEnumerable<ConfigurationListItem> c) : base(context)
         {
             activity = context;
             configurations = c;
         }
+
         protected override void OnCreate(Bundle savedInstanceState)
         {
             RequestWindowFeature((int)WindowFeatures.NoTitle);
             SetContentView(Resource.Layout.select_configuration_dialog);
+            ReOrderConfigurations();
             okButton = FindViewById<Button>(Resource.Id.selectConfigurationButtonOk);
             cancelButton = FindViewById<Button>(Resource.Id.selectConfigurationButtonCancel);
             spinner = FindViewById<Spinner>(Resource.Id.selectConfigurationSpinner);
@@ -40,6 +39,11 @@ namespace KeySndr.Clients.Mobile.Droid.dialogs
             okButton.Click += OkButton_Click;
             cancelButton.Click += CancelButton_Click;
             base.OnCreate(savedInstanceState);
+        }
+
+        private void ReOrderConfigurations()
+        {
+            configurations = configurations.OrderBy(a => a.Name);
         }
 
         private void CancelButton_Click(object sender, EventArgs e)
