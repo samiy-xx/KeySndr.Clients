@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 using Android.App;
 using Android.Content;
@@ -21,6 +22,7 @@ namespace KeySndr.Clients.Mobile.Droid
 	public class MainActivity : Activity
 	{
 	    private const string UrlKey = "URL";
+	    //private const string FullScreenKey = "FullScreen";
 
 	    private WebView webView;
         private IWebConnectionProvider webConnection;
@@ -33,8 +35,12 @@ namespace KeySndr.Clients.Mobile.Droid
         protected override void OnCreate (Bundle bundle)
 		{
 			base.OnCreate (bundle);
-            SetContentView(Resource.Layout.Main);
             currentUrl = "file:///android_asset/index.html";
+
+            if (bundle != null && bundle.ContainsKey(UrlKey))
+                currentUrl = bundle.GetString(UrlKey);
+
+            SetContentView(Resource.Layout.Main);
             
             if (bundle != null && bundle.ContainsKey(UrlKey))
                 currentUrl = bundle.GetString(UrlKey);
@@ -97,7 +103,9 @@ namespace KeySndr.Clients.Mobile.Droid
         }
 
         private void SetupWebView()
-	    {
+        {
+            var bVersion = (int) Build.VERSION.SdkInt;
+            webView.SetLayerType(bVersion >= 19 ? LayerType.Hardware : LayerType.Software, null);
             webView.Settings.JavaScriptEnabled = true;
             webView.Settings.UseWideViewPort = true;
             webView.Settings.LoadWithOverviewMode = true;
@@ -119,9 +127,16 @@ namespace KeySndr.Clients.Mobile.Droid
         {
             var intent = new Intent(this, typeof(SettingsActivity));
             intent.PutExtra("search", true);
+            
             StartActivity(intent);
         }
 
+	    private void ReloadToFullScreen()
+	    {
+	        var intent = new Intent(this, typeof(FullScreenActivity));
+	        intent.PutExtra(UrlKey, currentUrl);
+            StartActivity(intent);
+	    }
         private void CheckFirstRun()
         {
             if (preferences.FirtsTimeRunning)
@@ -143,6 +158,9 @@ namespace KeySndr.Clients.Mobile.Droid
                     break;
                 case Resource.Id.action_settings:
                     OpenSettings();
+                    break;
+                case Resource.Id.action_load_fullscreen:
+                    ReloadToFullScreen();
                     break;
                 default:
                     return false;
@@ -177,12 +195,27 @@ namespace KeySndr.Clients.Mobile.Droid
         {
             var apiResult = task.Result;
             inputConfiguration = apiResult.Content;
-            currentUrl = inputConfiguration.HasView 
-                ? $"http://{preferences.Ip}:{preferences.Port}/Views/{inputConfiguration.View}/index.html" 
+            if (preferences.UseCache)
+            {
+                currentUrl = inputConfiguration.HasView
+                ? $"http://{preferences.Ip}:{preferences.Port}/Views/{inputConfiguration.View}/index.html"
                 : $"http://{preferences.Ip}:{preferences.Port}/manage/play-grid.html?name={inputConfiguration.Name}";
+            }
+            else
+            {
+                currentUrl = inputConfiguration.HasView
+                ? $"http://{preferences.Ip}:{preferences.Port}/Views/{inputConfiguration.View}/index.html?rnd={GetRandomUrlPart()}"
+                : $"http://{preferences.Ip}:{preferences.Port}/manage/play-grid.html?name={inputConfiguration.Name}&rnd={GetRandomUrlPart()}";
+            }
+                
 
             RunOnUiThread(new Runnable(SetupView));
         }
+
+	    private string GetRandomUrlPart()
+	    {
+	        return Guid.NewGuid().ToString("n");
+	    }
 
         private void SetupView()
         {  
@@ -198,16 +231,16 @@ namespace KeySndr.Clients.Mobile.Droid
                 context = c;
             }
 
-            public override bool ShouldOverrideUrlLoading(WebView view, string url)
-            {
-                view.LoadUrl(url);
-                Toast.MakeText(context, "Loading", ToastLength.Short).Show();
-                return true;
-            }
-
             public override void OnPageStarted(WebView view, string url, Bitmap favicon)
             {
                 base.OnPageStarted(view, url, favicon);
+                Toast.MakeText(context, "Loading url "+ url, ToastLength.Short).Show();
+            }
+
+            public override void OnReceivedError(WebView view, IWebResourceRequest request, WebResourceError error)
+            {
+                base.OnReceivedError(view, request, error);
+                Toast.MakeText(context, "Error loading " + error.ErrorCode + " " + error.Description, ToastLength.Long);
             }
 
             public override void OnPageFinished(WebView view, string url)

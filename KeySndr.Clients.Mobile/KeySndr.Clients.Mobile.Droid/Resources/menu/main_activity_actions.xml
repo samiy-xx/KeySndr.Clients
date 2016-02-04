@@ -5,6 +5,10 @@
         android:icon="@drawable/ic_cloud_download_white_24dp"
         android:title="@string/action_load_confs"
         android:showAsAction="ifRoom" />
+  <item android:id="@+id/action_load_fullscreen"
+        android:icon="@drawable/ic_aspect_ratio_white_24dp"
+        android:title="@string/action_load_fullscreen"
+        android:showAsAction="ifRoom" />
   <item android:id="@+id/action_settings"
         android:title="@string/action_settings"
         android:icon="@drawable/ic_settings_white_24dp"

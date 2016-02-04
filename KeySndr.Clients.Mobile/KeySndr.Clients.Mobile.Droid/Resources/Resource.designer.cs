@@ -127,16 +127,19 @@ namespace KeySndr.Clients.Mobile.Droid
 			public const int ic_add_white_24dp = 2130837504;
 			
 			// aapt resource value: 0x7f020001
-			public const int ic_cloud_download_white_24dp = 2130837505;
+			public const int ic_aspect_ratio_white_24dp = 2130837505;
 			
 			// aapt resource value: 0x7f020002
-			public const int ic_loop_white_24dp = 2130837506;
+			public const int ic_cloud_download_white_24dp = 2130837506;
 			
 			// aapt resource value: 0x7f020003
-			public const int ic_settings_white_24dp = 2130837507;
+			public const int ic_loop_white_24dp = 2130837507;
 			
 			// aapt resource value: 0x7f020004
-			public const int Icon = 2130837508;
+			public const int ic_settings_white_24dp = 2130837508;
+			
+			// aapt resource value: 0x7f020005
+			public const int Icon = 2130837509;
 			
 			static Drawable()
 			{
@@ -154,11 +157,14 @@ namespace KeySndr.Clients.Mobile.Droid
 			// aapt resource value: 0x7f090009
 			public const int action_load_confs = 2131296265;
 			
-			// aapt resource value: 0x7f09000b
-			public const int action_refresh = 2131296267;
-			
 			// aapt resource value: 0x7f09000a
-			public const int action_settings = 2131296266;
+			public const int action_load_fullscreen = 2131296266;
+			
+			// aapt resource value: 0x7f09000c
+			public const int action_refresh = 2131296268;
+			
+			// aapt resource value: 0x7f09000b
+			public const int action_settings = 2131296267;
 			
 			// aapt resource value: 0x7f090008
 			public const int enableCache = 2131296264;
@@ -260,14 +266,17 @@ namespace KeySndr.Clients.Mobile.Droid
 		public partial class String
 		{
 			
-			// aapt resource value: 0x7f060003
-			public const int action_create_conf = 2131099651;
+			// aapt resource value: 0x7f060004
+			public const int action_create_conf = 2131099652;
 			
 			// aapt resource value: 0x7f060002
 			public const int action_load_confs = 2131099650;
 			
-			// aapt resource value: 0x7f060004
-			public const int action_refresh = 2131099652;
+			// aapt resource value: 0x7f060003
+			public const int action_load_fullscreen = 2131099651;
+			
+			// aapt resource value: 0x7f060005
+			public const int action_refresh = 2131099653;
 			
 			// aapt resource value: 0x7f060001
 			public const int action_settings = 2131099649;
