@@ -65,7 +65,7 @@ namespace KeySndr.Clients.Mobile.Droid
                 webView.Settings.CacheMode = CacheModes.NoCache;
                 webView.Settings.SetAppCacheEnabled(false);
             }
-            webView.SetWebViewClient(new MainActivity.WebClient(this));
+            webView.SetWebViewClient(new CustomWebClient(this));
         }
 
         private void LoadUrl()

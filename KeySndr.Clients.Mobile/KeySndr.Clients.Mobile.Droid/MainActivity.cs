@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Runtime.CompilerServices;
+using System.Linq;
+using System.Net;
 using System.Threading.Tasks;
 using Android.App;
 using Android.Content;
@@ -8,6 +9,7 @@ using Android.Content.PM;
 using Android.Graphics;
 using Android.Views;
 using Android.OS;
+using Android.Support.V4.View;
 using Android.Webkit;
 using Android.Widget;
 using Java.Lang;
@@ -15,10 +17,14 @@ using KeySndr.Clients.Mobile.Droid.dialogs;
 using KeySndr.Clients.Mobile.Droid.events;
 using KeySndr.Common;
 using KeySndr.Common.Providers;
+using Org.Apache.Http.Client.Params;
+using Object = Java.Lang.Object;
+using System.Net.Http;
+using Org.Apache.Http.Conn.Schemes;
 
 namespace KeySndr.Clients.Mobile.Droid
 {
-	[Activity (Label = "KeySndr", MainLauncher = true, Icon = "@mipmap/ic_launcher", LaunchMode = LaunchMode.SingleTop)]
+	[Activity (Label = "KeySndr", MainLauncher = true, Icon = "@mipmap/ic_launcher", LaunchMode = LaunchMode.SingleTop, HardwareAccelerated = true)]
 	public class MainActivity : Activity
 	{
 	    private const string UrlKey = "URL";
@@ -30,11 +36,13 @@ namespace KeySndr.Clients.Mobile.Droid
         private InputConfigurationsSelectDialog configurationsSelectDialog;
         private InputConfiguration inputConfiguration;
 	    private string currentUrl;
+	    private string currentBaseUrl;
 	    private string serverVersion;
 
         protected override void OnCreate (Bundle bundle)
 		{
 			base.OnCreate (bundle);
+            currentBaseUrl = "file://android_asset/";
             currentUrl = "file:///android_asset/index.html";
 
             if (bundle != null && bundle.ContainsKey(UrlKey))
@@ -115,8 +123,9 @@ namespace KeySndr.Clients.Mobile.Droid
                 webView.Settings.CacheMode = CacheModes.NoCache;
                 webView.Settings.SetAppCacheEnabled(false);
             }
-            webView.SetWebViewClient(new WebClient(this));
-	    }
+            webView.SetWebViewClient(new CustomWebClient(this));
+
+        }
 
 	    private void LoadUrl()
 	    {
@@ -137,6 +146,7 @@ namespace KeySndr.Clients.Mobile.Droid
 	        intent.PutExtra(UrlKey, currentUrl);
             StartActivity(intent);
 	    }
+
         private void CheckFirstRun()
         {
             if (preferences.FirtsTimeRunning)
@@ -195,17 +205,22 @@ namespace KeySndr.Clients.Mobile.Droid
         {
             var apiResult = task.Result;
             inputConfiguration = apiResult.Content;
+            currentBaseUrl = inputConfiguration.HasView
+                ? $"http://{preferences.Ip}:{preferences.Port}/Views/"
+                : $"http://{preferences.Ip}:{preferences.Port}/manage/";
+
+
             if (preferences.UseCache)
             {
                 currentUrl = inputConfiguration.HasView
-                ? $"http://{preferences.Ip}:{preferences.Port}/Views/{inputConfiguration.View}/index.html"
-                : $"http://{preferences.Ip}:{preferences.Port}/manage/play-grid.html?name={inputConfiguration.Name}";
+                ? $"{currentBaseUrl}{inputConfiguration.View}/index.html"
+                : $"{currentBaseUrl}play-grid.html?name={inputConfiguration.Name}";
             }
             else
             {
                 currentUrl = inputConfiguration.HasView
-                ? $"http://{preferences.Ip}:{preferences.Port}/Views/{inputConfiguration.View}/index.html?rnd={GetRandomUrlPart()}"
-                : $"http://{preferences.Ip}:{preferences.Port}/manage/play-grid.html?name={inputConfiguration.Name}&rnd={GetRandomUrlPart()}";
+                ? $"{currentBaseUrl}{inputConfiguration.View}/index.html?rnd={GetRandomUrlPart()}"
+                : $"{currentBaseUrl}play-grid.html?name={inputConfiguration.Name}&rnd={GetRandomUrlPart()}";
             }
                 
 
@@ -222,33 +237,17 @@ namespace KeySndr.Clients.Mobile.Droid
             LoadUrl(); 
         }
 
-        internal class WebClient : WebViewClient
-        {
-            private readonly Context context;
+	    
 
-            public WebClient(Context c)
-            {
-                context = c;
-            }
+	    internal class CustomPagerAdapter : PagerAdapter
+	    {
+	        public override bool IsViewFromObject(View view, Object objectValue)
+	        {
+	            throw new NotImplementedException();
+	        }
 
-            public override void OnPageStarted(WebView view, string url, Bitmap favicon)
-            {
-                base.OnPageStarted(view, url, favicon);
-                Toast.MakeText(context, "Loading url "+ url, ToastLength.Short).Show();
-            }
-
-            public override void OnReceivedError(WebView view, IWebResourceRequest request, WebResourceError error)
-            {
-                base.OnReceivedError(view, request, error);
-                Toast.MakeText(context, "Error loading " + error.ErrorCode + " " + error.Description, ToastLength.Long);
-            }
-
-            public override void OnPageFinished(WebView view, string url)
-            {
-                base.OnPageFinished(view, url);
-                Toast.MakeText(context, "Loaded", ToastLength.Short).Show();
-            }
-        }
+	        public override int Count { get; }
+	    }
     }
 }
 
