@@ -11,8 +11,7 @@ namespace KeySndr.Clients.Mobile.Droid
     public class CustomWebClient : WebViewClient
     {
         private readonly Context context;
-
-        private const int TimeOut = 10;
+        private const int TimeOut = 5;
 
         public CustomWebClient(Context c)
         {
@@ -22,6 +21,11 @@ namespace KeySndr.Clients.Mobile.Droid
         private bool SkipLoading(string p)
         {
             return (p.ToLower().EndsWith("jpg") || p.ToLower().EndsWith("png") || p.ToLower().EndsWith("jpeg") || p.ToLower().EndsWith("svg"));
+        }
+
+        public override WebResourceResponse ShouldInterceptRequest(WebView view, string url)
+        {
+            return base.ShouldInterceptRequest(view, url);
         }
 
         public override WebResourceResponse ShouldInterceptRequest(WebView view, IWebResourceRequest request)
@@ -42,19 +46,16 @@ namespace KeySndr.Clients.Mobile.Droid
                     {
                         var response = await c.GetAsync(request.Url.ToString());
                         var content = await response.Content.ReadAsStreamAsync();
-                        var req = response.RequestMessage;
-
                         return new WebResourceResponse(baseResponse.MimeType, "UTF-8", (int)response.StatusCode, response.ReasonPhrase, null, content);
                     }
                 }).Result;
-
+                
                 return result;
             }
             catch (AggregateException e)
             {
                 return baseResponse;
             }
-
         }
 
         public override void OnPageStarted(WebView view, string url, Bitmap favicon)

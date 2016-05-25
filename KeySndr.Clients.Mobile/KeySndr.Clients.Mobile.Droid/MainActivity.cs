@@ -1,38 +1,31 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Net;
 using System.Threading.Tasks;
 using Android.App;
 using Android.Content;
 using Android.Content.PM;
-using Android.Graphics;
 using Android.Views;
 using Android.OS;
 using Android.Support.V4.View;
 using Android.Webkit;
-using Android.Widget;
 using Java.Lang;
 using KeySndr.Clients.Mobile.Droid.dialogs;
 using KeySndr.Clients.Mobile.Droid.events;
 using KeySndr.Common;
 using KeySndr.Common.Providers;
-using Org.Apache.Http.Client.Params;
 using Object = Java.Lang.Object;
-using System.Net.Http;
-using Org.Apache.Http.Conn.Schemes;
+
 
 namespace KeySndr.Clients.Mobile.Droid
 {
 	[Activity (Label = "KeySndr", MainLauncher = true, Icon = "@mipmap/ic_launcher", LaunchMode = LaunchMode.SingleTop, HardwareAccelerated = true)]
-	public class MainActivity : Activity
+	public class MainActivity : KeysndrBaseActivity
 	{
 	    private const string UrlKey = "URL";
-	    //private const string FullScreenKey = "FullScreen";
+	    private const string ConfigKey = "InputConfig";
+	    private const string OrientationKey = "Orientation";
 
-	    private WebView webView;
         private IWebConnectionProvider webConnection;
-        private AppPreferences preferences;
         private InputConfigurationsSelectDialog configurationsSelectDialog;
         private InputConfiguration inputConfiguration;
 	    private string currentUrl;
@@ -45,31 +38,25 @@ namespace KeySndr.Clients.Mobile.Droid
             currentBaseUrl = "file://android_asset/";
             currentUrl = "file:///android_asset/index.html";
 
-            if (bundle != null && bundle.ContainsKey(UrlKey))
-                currentUrl = bundle.GetString(UrlKey);
+            if (bundle != null)
+            {
+                if (bundle.ContainsKey(UrlKey))
+                    currentUrl = bundle.GetString(UrlKey);
+                if (bundle.ContainsKey(ConfigKey))
+                    inputConfiguration = JsonSerializer.Deserialize<InputConfiguration>(bundle.GetString(ConfigKey));
+            }
 
-            SetContentView(Resource.Layout.Main);
-            
-            if (bundle != null && bundle.ContainsKey(UrlKey))
-                currentUrl = bundle.GetString(UrlKey);
-
-            LoadPreferences();
-            AssignWebView();
-            SetupWebView();
             CheckFirstRun();
-
             LoadUrl();
-            
 		}
 
 	    protected override void OnResume()
 	    {
 	        base.OnResume();
-            LoadPreferences();
             webConnection = ObjectFactory.GetProvider<IWebConnectionProvider>();
-            if (!string.IsNullOrEmpty(preferences.Ip))
+            if (!string.IsNullOrEmpty(Preferences.Ip))
             {
-                webConnection.SetBaseAddress(preferences.Ip, preferences.Port);
+                webConnection.SetBaseAddress(Preferences.Ip, Preferences.Port);
                 LoadServerVersion();
             }
         }
@@ -78,6 +65,7 @@ namespace KeySndr.Clients.Mobile.Droid
         {
             base.OnSaveInstanceState(outState);
             outState.PutString(UrlKey, currentUrl);
+            outState.PutString(ConfigKey, JsonSerializer.Serialize(inputConfiguration));
         }
 
         protected override void OnDestroy()
@@ -99,44 +87,15 @@ namespace KeySndr.Clients.Mobile.Droid
 	        serverVersion = result.Content;
 	    }
 
-	    private void LoadPreferences()
-        {
-            preferences =
-                AndroidAppPreferences.Create(Application.Context.GetSharedPreferences(KeySndrApplication.AppPreferencesId, FileCreationMode.Private));
-        }
-
-	    private void AssignWebView()
-	    {
-            webView = FindViewById<WebView>(Resource.Id.webview);
-        }
-
-        private void SetupWebView()
-        {
-            var bVersion = (int) Build.VERSION.SdkInt;
-            webView.SetLayerType(bVersion >= 19 ? LayerType.Hardware : LayerType.Software, null);
-            webView.Settings.JavaScriptEnabled = true;
-            webView.Settings.UseWideViewPort = true;
-            webView.Settings.LoadWithOverviewMode = true;
-            webView.Settings.DomStorageEnabled = true;
-            if (!preferences.UseCache)
-            {
-                webView.Settings.CacheMode = CacheModes.NoCache;
-                webView.Settings.SetAppCacheEnabled(false);
-            }
-            webView.SetWebViewClient(new CustomWebClient(this));
-
-        }
-
 	    private void LoadUrl()
 	    {
-	        webView.LoadUrl(currentUrl);
+	        WebView.LoadUrl(currentUrl);
 	    }
 
         private void OpenSettings()
         {
             var intent = new Intent(this, typeof(SettingsActivity));
             intent.PutExtra("search", true);
-            
             StartActivity(intent);
         }
 
@@ -144,12 +103,14 @@ namespace KeySndr.Clients.Mobile.Droid
 	    {
 	        var intent = new Intent(this, typeof(FullScreenActivity));
 	        intent.PutExtra(UrlKey, currentUrl);
+	        if (!string.IsNullOrEmpty(inputConfiguration?.GridSettings?.Mode))
+	            intent.PutExtra(OrientationKey, inputConfiguration.GridSettings.Mode);
             StartActivity(intent);
 	    }
 
         private void CheckFirstRun()
         {
-            if (preferences.FirtsTimeRunning)
+            if (Preferences.FirtsTimeRunning)
                 OpenSettings();
         }
 
@@ -205,12 +166,13 @@ namespace KeySndr.Clients.Mobile.Droid
         {
             var apiResult = task.Result;
             inputConfiguration = apiResult.Content;
+
             currentBaseUrl = inputConfiguration.HasView
-                ? $"http://{preferences.Ip}:{preferences.Port}/Views/"
-                : $"http://{preferences.Ip}:{preferences.Port}/manage/";
+                ? $"http://{Preferences.Ip}:{Preferences.Port}/Views/"
+                : $"http://{Preferences.Ip}:{Preferences.Port}/manage/";
 
 
-            if (preferences.UseCache)
+            if (Preferences.UseCache)
             {
                 currentUrl = inputConfiguration.HasView
                 ? $"{currentBaseUrl}{inputConfiguration.View}/index.html"
@@ -222,7 +184,19 @@ namespace KeySndr.Clients.Mobile.Droid
                 ? $"{currentBaseUrl}{inputConfiguration.View}/index.html?rnd={GetRandomUrlPart()}"
                 : $"{currentBaseUrl}play-grid.html?name={inputConfiguration.Name}&rnd={GetRandomUrlPart()}";
             }
-                
+
+            var mode = inputConfiguration?.GridSettings?.Mode.ToLower();
+            if (mode != null && (mode == "landscape" || mode == "portrait"))
+            {
+                if (mode == "landscape")
+                    SetLandScapeOrientation();
+                else 
+                    SetPortraitOrientation();
+            }
+            else
+            {
+                SetUserOrientation();
+            }
 
             RunOnUiThread(new Runnable(SetupView));
         }

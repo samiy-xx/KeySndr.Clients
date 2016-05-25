@@ -83,6 +83,7 @@
     <Compile Include="events\OnSelectConfigurationArgs.cs" />
     <Compile Include="FullScreenActivity.cs" />
     <Compile Include="KeySndrApplication.cs" />
+    <Compile Include="KeysndrBaseActivity.cs" />
     <Compile Include="MainActivity.cs" />
     <Compile Include="NetworkStateReceiver.cs" />
     <Compile Include="ObjectFactory.cs" />
